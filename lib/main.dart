@@ -1,97 +1,123 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-void main() => runApp(const MyApp());
+void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
-    const appTitle = 'Registration From';
-
     return MaterialApp(
-      title: appTitle,
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text(appTitle),
-        ),
-        body: const RegForm(),
-      ),
+        home: Scaffold(
+            appBar: AppBar(title: Text('User Registration Form')),
+            body: Center(child: RegisterUser())));
+  }
+}
+
+class RegisterUser extends StatefulWidget {
+  RegisterUserState createState() => RegisterUserState();
+}
+
+class RegisterUserState extends State {
+  // Boolean variable for CircularProgressIndicator.
+  bool visible = false;
+
+  // Getting value from TextField widget.
+  final nameController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+
+  Future userRegistration() async {
+    // Showing CircularProgressIndicator.
+    setState(() {
+      visible = true;
+    });
+
+    // Getting value from Controller
+    String name = nameController.text;
+    String email = emailController.text;
+
+    // SERVER API URL
+    Uri url = Uri.parse(
+        "http://localhost/phpsandbox/regform_flutter/registration.php");
+
+    // Store all data with Param Name.
+    var data = {'name': name, 'email': email};
+
+    // Starting Web API Call.
+    var response = await http.post(url, body: json.encode(data));
+
+    // Getting Server response into variable.
+    var message = jsonDecode(response.body);
+
+    // If Web call Success than Hide the CircularProgressIndicator.
+    if (response.statusCode == 200) {
+      setState(() {
+        visible = false;
+      });
+    }
+
+    // Showing Alert Dialog with Response JSON Message.
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: new Text(message),
+          actions: <Widget>[
+            FlatButton(
+              child: new Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
-}
-
-// Create a Form widget.
-class RegForm extends StatefulWidget {
-  const RegForm({Key? key}) : super(key: key);
-
-  @override
-  RegFormState createState() {
-    return RegFormState();
-  }
-}
-
-// Create a corresponding State class.
-// This class holds data related to the form.
-class RegFormState extends State<RegForm> {
-  // Create a global key that uniquely identifies the Form widget
-  // and allows validation of the form.
-  //
-  // Note: This is a GlobalKey<FormState>,
-  // not a GlobalKey<MyCustomFormState>.
-  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
-    // Build a Form widget using the _formKey created above.
-    return Form(
-      key: _formKey,
+    return Scaffold(
+        body: SingleChildScrollView(
+            child: Center(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextFormField(
-            decoration: InputDecoration(
-                border: UnderlineInputBorder(),
-                labelText: 'Enter your username'),
-            // The validator receives the text that the user has entered.
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter some text';
-              }
-              return null;
-            },
-          ),
-          TextFormField(
-            decoration: InputDecoration(
-                border: UnderlineInputBorder(),
-                labelText: 'Enter your email'),
-            // The validator receives the text that the user has entered.
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter some text';
-              }
-              return null;
-            },
-          ),
+        children: <Widget>[
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: ElevatedButton(
-              onPressed: () {
-                // Validate returns true if the form is valid, or false otherwise.
-                if (_formKey.currentState!.validate()) {
-                  // If the form is valid, display a snackbar. In the real world,
-                  // you'd often call a server or save the information in a database.
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Processing Data')),
-                  );
-                }
-              },
-              child: const Text('Register'),
-            ),
+              padding: const EdgeInsets.all(12.0),
+              child: Text('User Registration Form',
+                  style: TextStyle(fontSize: 21))),
+          Divider(),
+          Container(
+              width: 280,
+              padding: EdgeInsets.all(10.0),
+              child: TextField(
+                controller: nameController,
+                autocorrect: true,
+                decoration: InputDecoration(hintText: 'Enter Your Name Here'),
+              )),
+          Container(
+              width: 280,
+              padding: EdgeInsets.all(10.0),
+              child: TextField(
+                controller: emailController,
+                autocorrect: true,
+                decoration: InputDecoration(hintText: 'Enter Your Email Here'),
+              )),
+          RaisedButton(
+            onPressed: userRegistration,
+            color: Colors.green,
+            textColor: Colors.white,
+            padding: EdgeInsets.fromLTRB(10, 10, 10, 10),
+            child: Text('Click Here To Register User Online'),
           ),
+          Visibility(
+              visible: visible,
+              child: Container(
+                  margin: EdgeInsets.only(bottom: 30),
+                  child: CircularProgressIndicator())),
         ],
       ),
-    );
+    )));
   }
 }
-
